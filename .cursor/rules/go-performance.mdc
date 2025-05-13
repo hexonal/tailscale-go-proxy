@@ -4,6 +4,7 @@ globs:
 alwaysApply: false
 ---
 # Go 性能优化指南 (v1.0)
+(代码中的性能考量亦可在[文档注释](./go-comments.mdc#22-公共-api-注释-exported-identifiers)中说明)
 
 本规则提供了一系列 Go 应用性能优化的建议和最佳实践，帮助开发者识别和解决常见的性能瓶颈。
 
@@ -16,7 +17,7 @@ alwaysApply: false
         *   使用 `runtime/pprof` 进行代码级 profile。
         *   `go test -cpuprofile cpu.prof`
     *   **Memory Profiling (Heap Profiling)**: 分析内存分配情况，识别内存泄漏或过多分配。
-        *   `go test -memprofile mem.prof`
+        *   `go test -memprofile mem.prof` (与 [Benchmark 测试](./go-testing.mdc#benchmark-测试) 结合使用效果更佳)
     *   **Block Profiling**: 识别导致 Goroutine 阻塞的操作 (如 channel 发送/接收，等待锁)。
     *   **Mutex Profiling**: 识别锁竞争激烈的地方。
 *   **可视化**: 使用 `go tool pprof` 命令分析生成的 profile 文件，可以生成火焰图 (flame graphs)、调用图等。
@@ -44,6 +45,7 @@ alwaysApply: false
 *   **API 设计**: 考虑 API 是否导致不必要的内存分配。例如，返回 slice 的函数是否可以接受一个已分配的 slice 作为参数来填充数据。
 
 ## 3. 并发性能 (Concurrency Performance)
+(本节内容与 [Go 并发编程指南](./go-concurrency.mdc) 紧密相关)
 
 *   **避免锁竞争 (Lock Contention)**:
     *   尽量缩小临界区 (锁保护的代码范围)。
@@ -64,11 +66,11 @@ alwaysApply: false
 
 ## 5. 其他常见优化点
 
-*   **`defer` 的开销**: `defer` 会带来微小的性能开销。在对性能要求极高的热点路径 (如循环内部)，如果 `defer` 的使用非常频繁，可能需要考虑手动管理资源释放。但在绝大多数情况下，`defer` 的可读性和安全性更重要。
-*   **接口调用的开销**: 接口方法调用比直接方法调用有轻微的开销，因为需要动态派发。在性能敏感路径，如果发现接口调用是瓶颈，可以考虑具体类型调用，但这通常是微优化，需 `pprof` 数据支持。
+*   **`defer` 的开销**: [`defer`](./go-idioms.mdc#defer) 会带来微小的性能开销。在对性能要求极高的热点路径 (如循环内部)，如果 `defer` 的使用非常频繁，可能需要考虑手动管理资源释放。但在绝大多数情况下，`defer` 的可读性和安全性更重要。
+*   **接口调用的开销**: [接口](./go-idioms.mdc#接口满足)方法调用比直接方法调用有轻微的开销，因为需要动态派发。在性能敏感路径，如果发现接口调用是瓶颈，可以考虑具体类型调用，但这通常是微优化，需 `pprof` 数据支持。
 *   **正则表达式编译**: 如果正则表达式在循环中使用，预先编译它 (`regexp.MustCompile`) 并复用编译后的对象，避免重复编译。
 *   **JSON 处理**:
-    *   标准库 `encoding/json` 使用反射，性能可能不是最优。
+    *   标准库 `encoding/json` 使用反射，性能可能不是最优 (结构化日志库如 [slog, zap, zerolog](./go-config-logging.mdc#日志-logging) 可能提供更优性能的 JSON 处理)。
     *   对于高性能场景，可以考虑使用第三方库如 `json-iterator/go` 或代码生成工具。
 
 ## 6. 避免过早优化和微优化
