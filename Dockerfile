@@ -1,5 +1,5 @@
 # 第一阶段：构建 Go 可执行文件
-FROM golang:1.24-alpine as builder
+FROM golang:1.24-alpine AS builder
 WORKDIR /app
 COPY  . .
 RUN go mod download
@@ -10,7 +10,7 @@ RUN go install tailscale.com/cmd/tailscale@latest
 RUN go install tailscale.com/cmd/tailscaled@latest
 
 # 下载 gost 官方 release
-FROM alpine:latest as gostdl
+FROM alpine:latest AS gostdl
 WORKDIR /tmp
 RUN wget -O gost.tar.gz https://github.com/go-gost/gost/releases/download/v3.0.0/gost_3.0.0_linux_amd64.tar.gz \
     && tar -xzf gost.tar.gz
