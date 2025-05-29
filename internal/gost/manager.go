@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -245,41 +245,23 @@ func (s *SOCKS5Server) handleConnect(conn net.Conn) (string, error) {
 
 // proxyConnection 通过 HTTP CONNECT 方式将客户端流量转发到目标代理
 func (s *SOCKS5Server) proxyConnection(clientConn net.Conn, targetAddr, proxyAddr string) {
-	// 连接到目标 HTTP 代理
-	proxyConn, err := net.Dial("tcp", proxyAddr)
+	connector, err := getProxyConnector(proxyAddr)
+	if err != nil {
+		log.Printf("getProxyConnector error: %v", err)
+		clientConn.Write([]byte{SOCKS5Version, 0x01, 0x00, IPv4Addr, 0, 0, 0, 0, 0, 0})
+		return
+	}
+	proxyConn, err := connector(targetAddr)
 	if err != nil {
 		log.Printf("Failed to connect to proxy %s: %v", proxyAddr, err)
 		clientConn.Write([]byte{SOCKS5Version, 0x01, 0x00, IPv4Addr, 0, 0, 0, 0, 0, 0})
 		return
 	}
 	defer proxyConn.Close()
-	// 发送 HTTP CONNECT 请求
-	connectReq := "CONNECT " + targetAddr + " HTTP/1.1\r\nHost: " + targetAddr + "\r\n\r\n"
-	if _, err := proxyConn.Write([]byte(connectReq)); err != nil {
-		log.Printf("Failed to send CONNECT request: %v", err)
-		clientConn.Write([]byte{SOCKS5Version, 0x01, 0x00, IPv4Addr, 0, 0, 0, 0, 0, 0})
-		return
-	}
-	reader := bufio.NewReader(proxyConn)
-	resp, err := reader.ReadString('\n')
-	if err != nil || !strings.Contains(resp, "200") {
-		log.Printf("Proxy returned non-200 response: %s", resp)
-		clientConn.Write([]byte{SOCKS5Version, 0x01, 0x00, IPv4Addr, 0, 0, 0, 0, 0, 0})
-		return
-	}
-	// 跳过 HTTP 头部
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil || line == "\r\n" {
-			break
-		}
-	}
-	// 发送成功响应给客户端
 	if _, err := clientConn.Write([]byte{SOCKS5Version, 0x00, 0x00, IPv4Addr, 0, 0, 0, 0, 0, 0}); err != nil {
 		log.Printf("Failed to send success response: %v", err)
 		return
 	}
-	// 开始数据中继
 	s.relay(clientConn, proxyConn)
 }
 
@@ -349,29 +331,17 @@ func (h *HTTPProxyServer) handleRequest(w http.ResponseWriter, r *http.Request) 
 
 // handleConnect 处理 HTTP CONNECT 请求，转发到目标代理
 func (h *HTTPProxyServer) handleConnect(w http.ResponseWriter, r *http.Request, proxyAddr string) {
-	proxyConn, err := net.Dial("tcp", proxyAddr)
+	connector, err := getProxyConnector(proxyAddr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	proxyConn, err := connector(r.Host)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer proxyConn.Close()
-	connectReq := "CONNECT " + r.Host + " HTTP/1.1\r\nHost: " + r.Host + "\r\n\r\n"
-	if _, err := proxyConn.Write([]byte(connectReq)); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	reader := bufio.NewReader(proxyConn)
-	resp, err := reader.ReadString('\n')
-	if err != nil || !strings.Contains(resp, "200") {
-		http.Error(w, "Upstream proxy error", http.StatusBadGateway)
-		return
-	}
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil || line == "\r\n" {
-			break
-		}
-	}
 	hijacker, ok := w.(http.Hijacker)
 	if !ok {
 		http.Error(w, "Hijacking not supported", http.StatusInternalServerError)
@@ -389,31 +359,46 @@ func (h *HTTPProxyServer) handleConnect(w http.ResponseWriter, r *http.Request, 
 
 // handleHTTP 处理普通 HTTP 请求，转发到目标代理
 func (h *HTTPProxyServer) handleHTTP(w http.ResponseWriter, r *http.Request, proxyAddr string) {
-	proxyURL, _ := url.Parse("http://" + proxyAddr)
-	transport := &http.Transport{
-		Proxy: http.ProxyURL(proxyURL),
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
+	connector, err := getProxyConnector(proxyAddr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	client := &http.Client{
-		Transport: transport,
-		Timeout:   60 * time.Second,
+	proxyConn, err := connector(r.URL.Host)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+	defer proxyConn.Close()
+
+	// 解析下游代理认证信息
+	u, err := url.Parse(proxyAddr)
+	var auth string
+	if err == nil && u.User != nil {
+		auth = "Basic " + base64Encode(u.User.Username()+":"+getPassword(u.User))
+	}
+
+	// 构造新的请求，带 Proxy-Authorization
 	req, err := http.NewRequest(r.Method, r.URL.String(), r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	for key, values := range r.Header {
-		if key != "Proxy-Authorization" {
-			for _, value := range values {
-				req.Header.Add(key, value)
-			}
+		for _, value := range values {
+			req.Header.Add(key, value)
 		}
 	}
-	resp, err := client.Do(req)
+	if auth != "" {
+		req.Header.Set("Proxy-Authorization", auth)
+	}
+
+	err = req.Write(proxyConn)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	resp, err := http.ReadResponse(bufio.NewReader(proxyConn), req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -443,4 +428,150 @@ func (h *HTTPProxyServer) relay(conn1, conn2 net.Conn) {
 		conn2.Close()
 	}()
 	wg.Wait()
+}
+
+// ========== 新增：下游代理连接器工厂 =============
+func getProxyConnector(proxyAddr string) (func(targetAddr string) (net.Conn, error), error) {
+	u, err := url.Parse(proxyAddr)
+	if err != nil || u.Scheme == "" {
+		// 兼容老格式（无协议，直接 host:port），默认 http
+		return func(targetAddr string) (net.Conn, error) {
+			// HTTP CONNECT
+			conn, err := net.Dial("tcp", proxyAddr)
+			if err != nil {
+				return nil, err
+			}
+			// 发送 CONNECT
+			connectReq := "CONNECT " + targetAddr + " HTTP/1.1\r\nHost: " + targetAddr + "\r\n\r\n"
+			if _, err := conn.Write([]byte(connectReq)); err != nil {
+				conn.Close()
+				return nil, err
+			}
+			reader := bufio.NewReader(conn)
+			resp, err := reader.ReadString('\n')
+			if err != nil || !strings.Contains(resp, "200") {
+				conn.Close()
+				return nil, fmt.Errorf("proxy returned non-200: %s", resp)
+			}
+			// 跳过 HTTP 头
+			for {
+				line, err := reader.ReadString('\n')
+				if err != nil || line == "\r\n" {
+					break
+				}
+			}
+			return conn, nil
+		}, nil
+	}
+	switch u.Scheme {
+	case "http":
+		return func(targetAddr string) (net.Conn, error) {
+			// HTTP CONNECT
+			conn, err := net.Dial("tcp", u.Host)
+			if err != nil {
+				return nil, err
+			}
+			// 认证
+			var auth string
+			if u.User != nil {
+				auth = "Proxy-Authorization: Basic " +
+					base64Encode(u.User.Username()+":"+getPassword(u.User)) + "\r\n"
+			}
+			connectReq := "CONNECT " + targetAddr + " HTTP/1.1\r\nHost: " + targetAddr + "\r\n" + auth + "\r\n"
+			if _, err := conn.Write([]byte(connectReq)); err != nil {
+				conn.Close()
+				return nil, err
+			}
+			reader := bufio.NewReader(conn)
+			resp, err := reader.ReadString('\n')
+			if err != nil || !strings.Contains(resp, "200") {
+				conn.Close()
+				return nil, fmt.Errorf("proxy returned non-200: %s", resp)
+			}
+			for {
+				line, err := reader.ReadString('\n')
+				if err != nil || line == "\r\n" {
+					break
+				}
+			}
+			return conn, nil
+		}, nil
+	case "socks5":
+		return func(targetAddr string) (net.Conn, error) {
+			conn, err := net.Dial("tcp", u.Host)
+			if err != nil {
+				return nil, err
+			}
+			// SOCKS5 握手
+			var user, pass string
+			if u.User != nil {
+				user = u.User.Username()
+				pass = getPassword(u.User)
+			}
+			// 1. greeting
+			methods := []byte{0x00}
+			if user != "" {
+				methods = []byte{0x02}
+			}
+			conn.Write([]byte{0x05, byte(len(methods))})
+			conn.Write(methods)
+			resp := make([]byte, 2)
+			if _, err := io.ReadFull(conn, resp); err != nil {
+				conn.Close()
+				return nil, err
+			}
+			if resp[1] == 0x02 {
+				// 用户名密码认证
+				conn.Write([]byte{0x01, byte(len(user))})
+				conn.Write([]byte(user))
+				conn.Write([]byte{byte(len(pass))})
+				conn.Write([]byte(pass))
+				authResp := make([]byte, 2)
+				if _, err := io.ReadFull(conn, authResp); err != nil || authResp[1] != 0x00 {
+					conn.Close()
+					return nil, fmt.Errorf("SOCKS5 auth failed")
+				}
+			}
+			// 2. CONNECT
+			host, portStr, _ := net.SplitHostPort(targetAddr)
+			port := parsePort(portStr)
+			addrType, addrBytes := packAddr(host)
+			req := []byte{0x05, 0x01, 0x00, addrType}
+			req = append(req, addrBytes...)
+			req = append(req, byte(port>>8), byte(port&0xff))
+			conn.Write(req)
+			reply := make([]byte, 10)
+			if _, err := io.ReadFull(conn, reply); err != nil || reply[1] != 0x00 {
+				conn.Close()
+				return nil, fmt.Errorf("SOCKS5 connect failed")
+			}
+			return conn, nil
+		}, nil
+	default:
+		return nil, fmt.Errorf("不支持的下游代理协议: %s", u.Scheme)
+	}
+}
+
+// base64 工具
+func base64Encode(s string) string {
+	return strings.TrimRight(strings.ReplaceAll(fmt.Sprintf("%q", s), "\\x", ""), "\"")
+}
+func getPassword(u *url.Userinfo) string {
+	p, _ := u.Password()
+	return p
+}
+func parsePort(portStr string) int {
+	port, _ := strconv.Atoi(portStr)
+	return port
+}
+func packAddr(host string) (byte, []byte) {
+	if ip := net.ParseIP(host); ip != nil {
+		if ip.To4() != nil {
+			return 0x01, ip.To4()
+			// IPv4
+		} else if ip.To16() != nil {
+			return 0x04, ip.To16()
+		}
+	}
+	return 0x03, append([]byte{byte(len(host))}, []byte(host)...)
 }
