@@ -74,8 +74,9 @@ services:
       - frontend
 
   tailscale-go-proxy:
-    build: ..
-      
+    build:
+      context: ..
+      dockerfile: Dockerfile
     ports:
       - "8081:8081"
       - "1080:1080"
