@@ -26,7 +26,7 @@ func RegisterNodeByDockerExec(user, key string) (string, error) {
 	cmd.Stderr = &out
 
 	if err := cmd.Run(); err != nil {
-		return "", err
+		return "", errors.New("cmd: " + strings.Join(cmd.Args, " ") + ", error: " + err.Error() + ", output: " + out.String())
 	}
 
 	var result RegisterResult
