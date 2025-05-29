@@ -94,6 +94,7 @@ docker exec -it headscale headscale users create flink
 ### 认证与节点路由
 - 认证格式：`key:key@host:port`
 - 认证通过后，流量自动转发到数据库注册的目标节点
+- **用户代理映射全部由数据库驱动，服务启动和注册节点后，自动从数据库加载到内存缓存（O(1)查找），无需手动维护 gost 配置文件**
 
 #### 示例
 ```bash
@@ -140,7 +141,7 @@ db_name: tailscale
 
 - **代理无法认证/转发？**
   - 检查注册 API 是否已正确注册 key 和目标 IP
-  - 检查 gost 配置是否已自动刷新
+  - 检查服务是否已自动从数据库刷新内存缓存（无需关心 gost 配置文件）
   - 检查数据库连接和 tailscale 网络状态
 - **tailscale 网络不通？**
   - 检查 TS_AUTHKEY 环境变量和 headscale 服务
@@ -153,7 +154,7 @@ db_name: tailscale
 ## 目录结构
 - main.go 只负责组装和启动
 - internal/tailscale 进程管理
-- internal/gost 代理配置与进程管理
+- internal/gost 代理配置与进程管理（**用户代理映射仅依赖数据库和内存缓存**）
 - internal/service 数据库初始化
 - internal/api gin 路由注册
 - internal/config 配置加载

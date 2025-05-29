@@ -64,5 +64,3 @@ func TestEnsureReady_Integration(t *testing.T) {
 	}
 	t.Log("EnsureReady 启动成功，tailscaled 和 tailscale up 均无报错")
 }
-
-// 你可以继续补充更多测试用例，如 loginServer 参数、tailscaleUp 失败等 

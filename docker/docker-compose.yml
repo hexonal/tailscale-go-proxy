@@ -74,9 +74,11 @@ services:
       - frontend
 
   tailscale-go-proxy:
-    build:
-      context: ..
-      dockerfile: Dockerfile
+    # 默认优先使用 image 字段拉取官方镜像，如需本地构建请注释 image 字段并启用 build 字段
+    image: ghcr.io/hexonal/tailscale-go-proxy:latest
+    # build:
+    #   context: ..
+    #   dockerfile: Dockerfile
     container_name: tailscale-go-proxy
     ports:
       - "8081:8081"
@@ -84,7 +86,7 @@ services:
       - "127.0.0.1:1089:1089"
     volumes:
       - ./config/tailscale-go-proxy-config.yaml:/app/config.yaml
-      - ./config/gost-config.yaml:/app/gost-config.yaml
+      # 修复：移除重复的挂载
       - ./tailscale-data:/var/lib/tailscale
       - ./tailscale-sock:/var/run/tailscale
       - /dev/net/tun:/dev/net/tun
