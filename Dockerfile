@@ -1,5 +1,5 @@
 # 第一阶段：构建 Go 可执行文件
-FROM golang:1.21-alpine as builder
+FROM golang:1.24-alpine as builder
 WORKDIR /app
 COPY  . .
 RUN go mod download
