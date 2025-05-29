@@ -18,7 +18,7 @@ type RegisterResult struct {
 func RegisterNodeByDockerExec(key string) (string, error) {
 	cmd := exec.Command(
 		"docker", "exec", "-i", "headscale",
-		"headscale", "nodes", "register",
+		"headscale", "--user", "flink", "nodes", "register",
 		"--key", key, "--output", "json",
 	)
 	var out bytes.Buffer

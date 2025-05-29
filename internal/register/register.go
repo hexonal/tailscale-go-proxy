@@ -3,6 +3,7 @@ package register
 import (
 	"database/sql"
 	"tailscale-go-proxy/internal/headscale"
+	"tailscale-go-proxy/internal/gost"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,6 +32,12 @@ func HandleRegister(c *gin.Context, db *sql.DB) {
 
 	if err := headscale.SaveKeyIP(db, req.Key, ip); err != nil {
 		c.JSON(500, RegisterResponse{Success: false, Message: "数据库保存失败: " + err.Error()})
+		return
+	}
+
+	// 注册和数据库都成功后，才更新 gost 配置
+	if err := gost.EnsureReady(db); err != nil {
+		c.JSON(500, RegisterResponse{Success: false, Message: "gost 配置更新失败: " + err.Error()})
 		return
 	}
 

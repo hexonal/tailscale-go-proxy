@@ -80,10 +80,11 @@ services:
     container_name: tailscale-go-proxy
     ports:
       - "8081:8081"
-      - "1080:1080"
-      - "9091:9091"
+      - "127.0.0.1:1080:1080"
+      - "127.0.0.1:1089:1089"
     volumes:
       - ./config/tailscale-go-proxy-config.yaml:/app/config.yaml
+      - ./config/gost-config.yaml:/app/gost-config.yaml
       - ./tailscale-data:/var/lib/tailscale
       - ./tailscale-sock:/var/run/tailscale
       - /dev/net/tun:/dev/net/tun
