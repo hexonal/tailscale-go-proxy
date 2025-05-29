@@ -32,27 +32,27 @@ func main() {
 	db := service.MustInitDB(cfg)
 	defer db.Close()
 
-	// 4. 启动 SOCKS5 代理
+	// 4. 从数据库导出并热加载 gost 用户转发表
+	if err := gost.RefreshUserProxyMapFromDB(db); err != nil {
+		log.Fatalf("gost 用户转发表导出/加载失败: %v", err)
+	}
+	log.Printf("[INFO] gost 用户转发表已加载，用户数: %d", len(gost.UserProxyMap))
+
+	// 5. 启动 SOCKS5 代理
 	go func() {
 		if err := gost.NewSOCKS5Server(":1080").Start(); err != nil {
 			log.Fatalf("SOCKS5 代理启动失败: %v", err)
 		}
 	}()
 
-	// 5. 启动 HTTP 代理
+	// 6. 启动 HTTP 代理
 	go func() {
 		if err := gost.NewHTTPProxyServer(":1089").Start(); err != nil {
 			log.Fatalf("HTTP 代理启动失败: %v", err)
 		}
 	}()
 
-	// 主动加载 gost 用户转发表
-	if err := gost.ReloadUserProxyMap("gost-config.yaml"); err != nil {
-		log.Fatalf("gost 配置加载失败: %v", err)
-	}
-	log.Printf("[INFO] gost 用户转发表已加载，用户数: %d", len(gost.UserProxyMap))
-
-	// 6. 启动 gin 路由
+	// 7. 启动 gin 路由
 	r := api.NewRouter(db)
 	log.Printf("管理 API 启动于 :%d", cfg.ManageAPIPort)
 	r.Run(":" + strconv.Itoa(cfg.ManageAPIPort))
