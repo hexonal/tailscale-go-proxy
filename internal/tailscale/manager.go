@@ -9,14 +9,14 @@ import (
 
 // EnsureReady 启动 tailscaled 并完成 up，确保 Tailscale 网络就绪
 func EnsureReady(authKey, loginServer string) error {
+	if authKey == "" {
+		return fmt.Errorf("TS_AUTHKEY 环境变量未设置")
+	}
 	if err := startTailscaled(); err != nil {
 		return fmt.Errorf("启动 tailscaled 失败: %w", err)
 	}
 	if err := waitTailscaledReady(); err != nil {
 		return fmt.Errorf("tailscaled sock 未就绪: %w", err)
-	}
-	if authKey == "" {
-		return fmt.Errorf("TS_AUTHKEY 环境变量未设置")
 	}
 	if err := tailscaleUp(authKey, loginServer); err != nil {
 		return fmt.Errorf("tailscale up 失败: %w", err)

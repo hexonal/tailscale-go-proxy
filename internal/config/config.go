@@ -9,13 +9,13 @@ import (
 )
 
 type Config struct {
-	TSAuthKey     string `yaml:"ts_authkey"`
 	ManageAPIPort int    `yaml:"manage_api_port"`
 	DBHost        string `yaml:"db_host"`
 	DBPort        int    `yaml:"db_port"`
 	DBUser        string `yaml:"db_user"`
 	DBPassword    string `yaml:"db_password"`
 	DBName        string `yaml:"db_name"`
+	TSAuthKey     string `yaml:"ts_authkey"`
 	LoginServer   string `yaml:"login_server"`
 }
 
