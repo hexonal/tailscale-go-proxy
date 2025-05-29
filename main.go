@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"tailscale-go-proxy/internal/api"
 	"tailscale-go-proxy/internal/config"
-	"tailscale-go-proxy/internal/gost"
 	"tailscale-go-proxy/internal/service"
 	"tailscale-go-proxy/internal/tailscale"
 )
@@ -33,9 +32,9 @@ func main() {
 	defer db.Close()
 
 	// 4. 启动 gost
-	if err := gost.EnsureReady(db); err != nil {
-		log.Fatalf("gost 启动失败: %v", err)
-	}
+	// if err := gost.EnsureReady(db); err != nil {
+	// 	log.Fatalf("gost 启动失败: %v", err)
+	// }
 
 	// 5. 启动 gin 路由
 	r := api.NewRouter(db)
