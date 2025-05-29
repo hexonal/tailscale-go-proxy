@@ -14,7 +14,7 @@ FROM alpine:latest AS gostdl
 WORKDIR /tmp
 RUN wget -O gost.tar.gz https://github.com/go-gost/gost/releases/download/v3.0.0/gost_3.0.0_linux_amd64.tar.gz \
     && tar -xzf gost.tar.gz \
-    && mv /tmp/gost_3.0.0_linux_amd64/gost /tmp/gost
+    && find /tmp -type f -name gost -exec mv {} /tmp/gost \;
 
 # 最终运行镜像
 FROM alpine:latest
