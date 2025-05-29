@@ -82,7 +82,7 @@ services:
       - "1080:1080"
       - "9091:9091"
     volumes:
-      - ./config.yaml:/app/config.yaml
+      - ./config/tailscale-go-proxy-config.yaml:/app/config.yaml
       - ./tailscale-data:/var/lib/tailscale
       - ./tailscale-sock:/var/run/tailscale
       - /dev/net/tun:/dev/net/tun
