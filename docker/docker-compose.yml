@@ -74,7 +74,8 @@ services:
       - frontend
 
   tailscale-go-proxy:
-    build: .
+    build: ..
+      
     ports:
       - "8081:8081"
       - "1080:1080"
