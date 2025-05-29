@@ -13,7 +13,8 @@ RUN go install tailscale.com/cmd/tailscaled@latest
 FROM alpine:latest AS gostdl
 WORKDIR /tmp
 RUN wget -O gost.tar.gz https://github.com/go-gost/gost/releases/download/v3.0.0/gost_3.0.0_linux_amd64.tar.gz \
-    && tar -xzf gost.tar.gz
+    && tar -xzf gost.tar.gz \
+    && mv /tmp/gost_3.0.0_linux_amd64/gost /tmp/gost
 
 # 最终运行镜像
 FROM alpine:latest
@@ -24,6 +25,6 @@ RUN apk add --no-cache iptables ip6tables docker-cli ca-certificates \
 COPY --from=builder /app/tailscale-go-proxy .
 COPY --from=builder /go/bin/tailscale /usr/local/bin/tailscale
 COPY --from=builder /go/bin/tailscaled /usr/local/bin/tailscaled
-COPY --from=gostdl /tmp/gost/gost /usr/local/bin/gost
+COPY --from=gostdl /tmp/gost /usr/local/bin/gost
 EXPOSE 1080 1089 8081
 CMD ["./tailscale-go-proxy"]
