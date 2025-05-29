@@ -149,7 +149,7 @@ func TestProxyChain_HTTP_HTTP(t *testing.T) {
 		},
 		Timeout: 10 * time.Second,
 	}
-	resp, err := client.Get("http://baidu.com/")
+	resp, err := client.Get("https://ipinfo.io")
 	if err != nil {
 		t.Fatalf("HTTP->HTTP链路请求失败: %v", err)
 	}
@@ -181,7 +181,7 @@ func TestCurlSOCKS5Proxy(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 
 	// 用 curl 通过 SOCKS5 代理访问 baidu.com
-	cmd := exec.Command("curl", "-s", "--socks5", "socksuser:sockspass@127.0.0.1:1111", "http://baidu.com/")
+	cmd := exec.Command("curl", "-s", "--socks5", "socksuser:sockspass@127.0.0.1:1111", "https://ipinfo.io")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("curl 通过 SOCKS5 代理失败: %v, output=%s", err, string(output))
@@ -211,7 +211,7 @@ func TestCurlHTTPProxy(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 
 	// 用 curl 通过 HTTP 代理访问 baidu.com
-	curlCmd := []string{"curl", "-v", "-s", "-x", "http://httpuser:httppass@127.0.0.1:1112", "http://baidu.com/"}
+	curlCmd := []string{"curl", "-v", "-s", "-x", "http://httpuser:httppass@127.0.0.1:1112", "https://ipinfo.io"}
 	fmt.Printf("[DEBUG] 执行 curl 命令: %s\n", strings.Join(curlCmd, " "))
 	cmd := exec.Command(curlCmd[0], curlCmd[1:]...)
 	output, err := cmd.CombinedOutput()
