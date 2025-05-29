@@ -2,11 +2,13 @@ package gost
 
 import (
 	"bufio"
+	"encoding/base64"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 )
 
@@ -42,10 +44,26 @@ func (h *HTTPProxyServer) Start() error {
 // 参数 w 为响应写入器，r 为客户端请求。
 func (h *HTTPProxyServer) handleRequest(w http.ResponseWriter, r *http.Request) {
 	var username, password, proxyAddr string
-	// 1. 解析认证信息（Basic Auth）
-	if r.URL != nil && r.URL.User != nil {
+	// 1. 解析认证信息（优先 Proxy-Authorization 头，其次 URL.User）
+	if auth := r.Header.Get("Proxy-Authorization"); auth != "" {
+		// 只支持 Basic 认证
+		const prefix = "Basic "
+		if len(auth) > len(prefix) && auth[:len(prefix)] == prefix {
+			decoded, err := base64.StdEncoding.DecodeString(auth[len(prefix):])
+			if err == nil {
+				parts := strings.SplitN(string(decoded), ":", 2)
+				if len(parts) == 2 {
+					username = parts[0]
+					password = parts[1]
+				}
+			}
+		}
+	}
+	if username == "" && r.URL != nil && r.URL.User != nil {
 		username = r.URL.User.Username()
 		password, _ = r.URL.User.Password()
+	}
+	if username != "" {
 		userKey := username + ":" + password
 		userProxyMapLock.RLock()
 		proxyAddr = UserProxyMap[userKey]

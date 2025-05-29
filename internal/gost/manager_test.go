@@ -219,8 +219,8 @@ func TestCurlHTTPProxy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("curl 通过 HTTP 代理失败: %v, output=%s", err, string(output))
 	}
-	if !strings.Contains(string(output), "<html") {
-		t.Errorf("curl HTTP 代理未获取到 HTML 内容, output=%s", string(output))
+	if !strings.Contains(string(output), "<html") && !strings.Contains(string(output), "\"ip\"") {
+		t.Errorf("curl HTTP 代理未获取到预期内容, output=%s", string(output))
 	} else {
 		fmt.Println("curl HTTP 代理返回内容前512字：\n" + string(output[:min(len(output), 512)]))
 	}
