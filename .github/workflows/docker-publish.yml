@@ -35,4 +35,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/hexonal/tailscale-go-proxy:latest
