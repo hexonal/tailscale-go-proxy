@@ -72,16 +72,16 @@ func itoa(i int) string {
 	return fmt.Sprintf("%d", i)
 }
 
-// 从代理 URL 认证中提取 key（即密码部分）
+// 从代理 URL 认证中提取 key（用户名和密码都为 key，且必须一致）
 func extractKeyFromURLUser(r *http.Request) string {
 	if r.URL == nil || r.URL.User == nil {
 		return ""
 	}
-	_, keySet := r.URL.User.Password()
-	if !keySet {
+	username := r.URL.User.Username()
+	key, keySet := r.URL.User.Password()
+	if !keySet || username != key {
 		return ""
 	}
-	key, _ := r.URL.User.Password()
 	return key
 }
 

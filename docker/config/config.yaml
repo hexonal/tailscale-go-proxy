@@ -44,10 +44,13 @@ ephemeral_node_inactivity_timeout: 30m
 
 # Database configuration
 database:
-  type: sqlite
-  sqlite:
-    path: /var/lib/headscale/db.sqlite
-    write_ahead_log: true
+  type: postgres
+  postgres:
+    host: pg
+    port: 5432
+    user: tailscale
+    pass: tailscale
+    name: tailscale
 
 ### TLS configuration
 # Let's encrypt / ACME
@@ -64,7 +67,7 @@ tls_key_path: ""
 
 # Logging configuration
 log:
-  format: text
+  format: json
   level: info
 
 ## Policy

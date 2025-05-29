@@ -1,8 +1,10 @@
 package config
 
 import (
+	"database/sql"
 	"os"
 
+	_ "github.com/lib/pq"
 	"gopkg.in/yaml.v3"
 )
 
@@ -14,6 +16,12 @@ type Config struct {
 	HeadscaleHTTPAddr   string `yaml:"headscale_http_addr"`
 	CacheUpdateInterval int    `yaml:"cache_update_interval"`
 	StatusCheckInterval int    `yaml:"status_check_interval"`
+
+	DBHost     string `yaml:"db_host"`
+	DBPort     int    `yaml:"db_port"`
+	DBUser     string `yaml:"db_user"`
+	DBPassword string `yaml:"db_password"`
+	DBName     string `yaml:"db_name"`
 }
 
 func LoadConfig(path string) (*Config, error) {
@@ -28,4 +36,16 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+// InitPGTable 检查并自动创建 register_key_ip_map 表
+func InitPGTable(db *sql.DB) error {
+	createTableSQL := `CREATE TABLE IF NOT EXISTS register_key_ip_map (
+		id SERIAL PRIMARY KEY,
+		reg_key VARCHAR(255) NOT NULL UNIQUE,
+		ip_address VARCHAR(64) NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	)`
+	_, err := db.Exec(createTableSQL)
+	return err
 }

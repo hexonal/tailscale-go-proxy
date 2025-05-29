@@ -6,3 +6,10 @@ headscale_grpc_addr: "headscale:50443"
 headscale_http_addr: "headscale:8080"
 cache_update_interval: 5 # 秒
 status_check_interval: 10 # 秒
+
+# 新增 PostgreSQL 连接配置
+db_host: pg
+db_port: 5432
+db_user: tailscale
+db_password: tailscale
+db_name: tailscale

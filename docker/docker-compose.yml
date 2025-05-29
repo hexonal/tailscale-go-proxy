@@ -40,6 +40,7 @@ services:
     depends_on:
       - headscale
       - derper
+      - pg
   headscale:
     image: headscale/headscale:0.25-debug  # 升级到最新版本
     container_name: headscale
@@ -63,6 +64,14 @@ services:
       - frontend
     depends_on:
       - derper
+      - pg
+    environment:
+      - HEADSCALE_DATABASE_TYPE=postgres
+      - HEADSCALE_DATABASE_HOST=pg
+      - HEADSCALE_DATABASE_PORT=5432
+      - HEADSCALE_DATABASE_USER=tailscale
+      - HEADSCALE_DATABASE_PASS=tailscale
+      - HEADSCALE_DATABASE_NAME=tailscale
 
   # DERP 服务器 - 修复端口映射
   derper:
@@ -118,7 +127,25 @@ services:
     depends_on:
       - headscale
       - tailscale
+      - pg
     restart: unless-stopped
+    networks:
+      - frontend
+
+  pg:
+    image: postgres:15
+    container_name: pg
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=tailscale
+      - POSTGRES_USER=tailscale
+      - POSTGRES_PASSWORD=tailscale
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pg-data:/var/lib/postgresql/data
+    networks:
+      - frontend
 
 networks:
   frontend:

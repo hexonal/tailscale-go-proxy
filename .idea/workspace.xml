@@ -5,7 +5,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="823ed716-19eb-467b-a3ae-cd5f3ecc2133" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/docs/设计方案.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docekr/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/docker/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docekr/config.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docekr/config/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker/config/config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docekr/config/derp.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker/config/derp.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docekr/config/headplane.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker/config/headplane.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docekr/db.sqlite" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docekr/db.sqlite-shm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docekr/db.sqlite-wal" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docekr/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/设计方案.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/设计方案.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/config/config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/proxy/http.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/proxy/http.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/register/register.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/register/register.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,7 +69,7 @@
   </component>
   <component name="GithubPullRequestsUISettings"><![CDATA[{
   "selectedUrlAndAccountId": {
-    "url": "https://github.com/hexonal/cursor-rules.git",
+    "url": "https://github.com/hexonal/tailscale-go-proxy.git",
     "accountId": "c04c4ed1-debc-4916-9e8c-3262caa971a6"
   }
 }]]></component>
