@@ -31,7 +31,15 @@ func startTailscaled() error {
 	cmd := exec.Command("tailscaled", "--state=/var/lib/tailscale/tailscaled.state", "--socket=/var/run/tailscale/tailscaled.sock")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Start()
+	// tailscaled 需要常驻后台运行
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	// 用 goroutine 等待 tailscaled 退出，避免僵尸进程
+	go func() {
+		_ = cmd.Wait()
+	}()
+	return nil
 }
 
 func waitTailscaledReady() error {
@@ -45,7 +53,7 @@ func waitTailscaledReady() error {
 }
 
 func tailscaleUp(authKey string) error {
-	cmd := exec.Command("tailscale", "up", "--authkey="+authKey, "--hostname=go-proxy", "--accept-dns=true", "--socket=/var/run/tailscale/tailscaled.sock")
+	cmd := exec.Command("tailscale", "up", "--authkey="+authKey, "--hostname=go-proxy", "--accept-dns=true")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
@@ -53,7 +61,7 @@ func tailscaleUp(authKey string) error {
 
 func waitTailscaleIP() error {
 	for i := 0; i < 30; i++ {
-		out, err := exec.Command("tailscale", "ip", "--socket=/var/run/tailscale/tailscaled.sock").Output()
+		out, err := exec.Command("tailscale", "ip").Output()
 		if err == nil && len(out) > 0 {
 			return nil
 		}
