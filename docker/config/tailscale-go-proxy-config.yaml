@@ -1,5 +1,5 @@
 # tailscale-go-proxy 配置
-manage_api_port: 9091
+manage_api_port: 8081
 
 db_host: 154.89.148.31
 db_port: 5432

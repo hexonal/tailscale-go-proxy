@@ -22,6 +22,8 @@ var userProxyMapLock sync.RWMutex
 const (
 	SOCKS5ProxyPort = 1080 // SOCKS5 代理端口
 	HTTPProxyPort   = 1089 // HTTP 代理端口
+	
+	SourcePort = 8939 //源端端口
 )
 
 // gost 配置文件路径常量，便于统一维护
@@ -70,7 +72,7 @@ func makeUserEntry(key, ip string) UserEntry {
 	return UserEntry{
 		Username: key,
 		Password: key,
-		Forward:  ip + ":" + strconv.Itoa(SOCKS5ProxyPort),
+		Forward:  ip + ":" + strconv.Itoa(SourcePort),
 	}
 }
 
