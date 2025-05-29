@@ -90,7 +90,7 @@ func (s *SOCKS5Server) Start() error {
 		return err
 	}
 	defer listener.Close()
-	log.Printf("SOCKS5 server listening on %s", s.addr)
+	log.Printf("SOCKS5 代理已启动，监听地址: %s", s.addr)
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -304,7 +304,7 @@ func (h *HTTPProxyServer) Start() error {
 		Addr:    h.addr,
 		Handler: http.HandlerFunc(h.handleRequest),
 	}
-	log.Printf("HTTP proxy server listening on %s", h.addr)
+	log.Printf("HTTP 代理已启动，监听地址: %s", h.addr)
 	return server.ListenAndServe()
 }
 
