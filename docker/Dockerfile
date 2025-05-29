@@ -1,7 +1,9 @@
 # 第一阶段：构建 Go 可执行文件
 FROM golang:1.21-alpine as builder
 WORKDIR /app
-COPY ../.. .
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
 RUN go build -o tailscale-go-proxy main.go
 
 # 安装 tailscale 和 tailscaled
