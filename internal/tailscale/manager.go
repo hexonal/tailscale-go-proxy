@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"time"
+	"strings"
 )
 
 // EnsureReady 启动 tailscaled 并完成 up，确保 Tailscale 网络就绪
@@ -63,7 +64,7 @@ func tailscaleUp(authKey, loginServer string) error {
 	err := cmd.Run()
 	if err != nil {
 		// 打印出具体命令和参数，方便排查
-		fmt.Printf("tailscale up 执行失败，命令: tailscale %v，错误: %v\n", args, err)
+		fmt.Printf("tailscale up 执行失败，命令: tailscale %s，错误: %v\n", strings.Join(args, " "), err)
 	}
 	return err
 }
