@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"tailscale-go-proxy/internal/api"
 	"tailscale-go-proxy/internal/config"
+	"tailscale-go-proxy/internal/gost"
 	"tailscale-go-proxy/internal/service"
 	"tailscale-go-proxy/internal/tailscale"
 )
@@ -31,12 +32,21 @@ func main() {
 	db := service.MustInitDB(cfg)
 	defer db.Close()
 
-	// 4. 启动 gost
-	// if err := gost.EnsureReady(db); err != nil {
-	// 	log.Fatalf("gost 启动失败: %v", err)
-	// }
+	// 4. 启动 SOCKS5 代理
+	go func() {
+		if err := gost.NewSOCKS5Server(":1080").Start(); err != nil {
+			log.Fatalf("SOCKS5 代理启动失败: %v", err)
+		}
+	}()
 
-	// 5. 启动 gin 路由
+	// 5. 启动 HTTP 代理
+	go func() {
+		if err := gost.NewHTTPProxyServer(":1089").Start(); err != nil {
+			log.Fatalf("HTTP 代理启动失败: %v", err)
+		}
+	}()
+
+	// 6. 启动 gin 路由
 	r := api.NewRouter(db)
 	log.Printf("管理 API 启动于 :%d", cfg.ManageAPIPort)
 	r.Run(":" + strconv.Itoa(cfg.ManageAPIPort))
