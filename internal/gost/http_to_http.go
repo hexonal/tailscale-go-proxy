@@ -165,10 +165,11 @@ func (h *HTTPProxyServer) handleHTTP(w http.ResponseWriter, r *http.Request, pro
 		}
 		// 设置下游代理认证头
 		if auth != "" {
-			newReq.Header.Set("Proxy-Authorization", auth)
+			// newReq.Header.Set("Proxy-Authorization", auth)
 		} else {
 			newReq.Header.Del("Proxy-Authorization")
 		}
+		newReq.Header.Del("Proxy-Authorization")
 		// 发送请求到下游代理
 		err = newReq.WriteProxy(proxyConn)
 		if err != nil {
