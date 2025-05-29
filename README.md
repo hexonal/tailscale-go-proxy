@@ -54,7 +54,7 @@ TS_AUTHKEY=your-ts-authkey
 - 如使用自建 Headscale：
   1. 进入 headscale 容器：
      ```bash
-     docker exec -it headscale headscale preauthkeys create --user flink --reusable --expiration 0
+     docker exec -it headscale headscale preauthkeys create --user flink --reusable --expiration 999999
      ```
   2. 复制输出的 key，填入 .env 文件 TS_AUTHKEY 字段。
   3. 该 key 为永久有效（不会过期），可多次复用。

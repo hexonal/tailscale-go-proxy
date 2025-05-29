@@ -120,6 +120,7 @@ networks:
   frontend:
     name: docker-compose_frontend
     driver: bridge
+    external: true
     enable_ipv6: true
     ipam:
       driver: default
