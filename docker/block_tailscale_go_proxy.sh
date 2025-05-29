@@ -8,7 +8,7 @@ SOCKS5_PORT=1080
 # 需要放行的域名
 ALLOWED_DOMAINS=("headscale.ipv4.name" "derp.ipv4.name")
 # 需要放行的端口（可根据实际需求增减）
-ALLOWED_PORTS=(443 80 50443 8080)
+ALLOWED_PORTS=(443 80 50443 8080 3478)
 ALLOWED_IPS=()
 
 # 解析域名为IP
