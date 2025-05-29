@@ -4,17 +4,22 @@ WORKDIR /app
 COPY ../.. .
 RUN go build -o tailscale-go-proxy main.go
 
-# 第二阶段：单独提取 docker-cli
-FROM alpine:latest as dockercli
-RUN apk add --no-cache docker-cli
+# 安装 tailscale 和 tailscaled
+RUN go install tailscale.com/cmd/tailscale@latest
+RUN go install tailscale.com/cmd/tailscaled@latest
 
-# 第三阶段：最终运行镜像
+# 下载 gost 官方 release
+FROM alpine:latest as gostdl
+WORKDIR /tmp
+RUN wget -O gost.tar.gz https://github.com/go-gost/gost/releases/download/v3.0.0/gost-linux-amd64-3.0.0.tar.gz \
+    && tar -xzf gost.tar.gz
+
+# 最终运行镜像
 FROM alpine:latest
 WORKDIR /app
-COPY --from=dockercli /usr/bin/docker /usr/bin/docker
-COPY --from=dockercli /lib /lib
-COPY --from=dockercli /lib64 /lib64
 COPY --from=builder /app/tailscale-go-proxy .
-COPY config.yaml .
-EXPOSE 8081 1080 9091
+COPY --from=builder /go/bin/tailscale /usr/local/bin/tailscale
+COPY --from=builder /go/bin/tailscaled /usr/local/bin/tailscaled
+COPY --from=gostdl /tmp/gost /usr/local/bin/gost
+EXPOSE 1080 1089 8081
 CMD ["./tailscale-go-proxy"] 

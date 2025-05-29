@@ -1,52 +1,11 @@
 services:
   # 新增：Tailscale 数据平面/  # 代理池管理器 - 修正版本
-  tailscale:
-    image: tailscale/tailscale:latest
-    container_name: headscale-tailscale
-    hostname: headscale-server
-    restart: unless-stopped
-    privileged: true
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    devices:
-      - /dev/net/tun:/dev/net/tun
-    volumes:
-      - ./headscale-data:/var/lib/tailscale
-      - ./tailscale-sock:/var/run/tailscale  # 修正：统一使用 tailscale-sock
-    environment:
-      - PROXY_POOL_START=18080
-      - PROXY_POOL_END=18179    # 100个端口测试
-      # 或者
-      - PROXY_POOL_END=19079    # 1000个端口
-      - TS_AUTHKEY=${TS_AUTHKEY}  # 需要在 .env 文件中设置预授权密钥
-      - TS_STATE_DIR=/var/lib/tailscale
-      - TS_USERSPACE=false
-      - TS_EXTRA_ARGS=--login-server=https://headscale.ipv4.name --accept-routes
-    command: >
-      sh -c "
-        echo 'Starting tailscaled daemon...' &&
-        tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock &
-        TAILSCALED_PID=$$! &&
-        echo 'Waiting for tailscaled to be ready...' &&
-        sleep 5 &&
-        echo 'Connecting to headscale server...' &&
-        tailscale up --login-server=https://headscale.ipv4.name --authkey=${TS_AUTHKEY} --hostname=headscale-server --accept-dns=true &&
-        echo 'All services started. Keeping container alive...' &&
-        wait
-      "
-    networks:
-      - frontend
-    depends_on:
-      - headscale
-      - derper
-      - pg
   headscale:
-    image: headscale/headscale:0.25-debug  # 升级到最新版本
+    image: headscale/headscale:0.25-debug
     container_name: headscale
     command: serve
     restart: unless-stopped
-    privileged: true  # 给予网络管理权限
+    privileged: true
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
@@ -122,13 +81,22 @@ services:
       - "9091:9091"
     volumes:
       - ./config.yaml:/app/config.yaml
-      - ./docker/tailscale-sock:/var/run/tailscale
+      - ./tailscale-data:/var/lib/tailscale
+      - ./tailscale-sock:/var/run/tailscale
+      - /dev/net/tun:/dev/net/tun
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - headscale
-      - tailscale
+      - derper
       - pg
     restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
     networks:
       - frontend
 

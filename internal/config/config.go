@@ -9,19 +9,12 @@ import (
 )
 
 type Config struct {
-	HTTPProxyPort       int    `yaml:"http_proxy_port"`
-	SOCKS5ProxyPort     int    `yaml:"socks5_proxy_port"`
-	ManageAPIPort       int    `yaml:"manage_api_port"`
-	HeadscaleGRPCAddr   string `yaml:"headscale_grpc_addr"`
-	HeadscaleHTTPAddr   string `yaml:"headscale_http_addr"`
-	CacheUpdateInterval int    `yaml:"cache_update_interval"`
-	StatusCheckInterval int    `yaml:"status_check_interval"`
-
-	DBHost     string `yaml:"db_host"`
-	DBPort     int    `yaml:"db_port"`
-	DBUser     string `yaml:"db_user"`
-	DBPassword string `yaml:"db_password"`
-	DBName     string `yaml:"db_name"`
+	ManageAPIPort int    `yaml:"manage_api_port"`
+	DBHost        string `yaml:"db_host"`
+	DBPort        int    `yaml:"db_port"`
+	DBUser        string `yaml:"db_user"`
+	DBPassword    string `yaml:"db_password"`
+	DBName        string `yaml:"db_name"`
 }
 
 func LoadConfig(path string) (*Config, error) {

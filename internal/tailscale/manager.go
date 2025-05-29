@@ -1,0 +1,63 @@
+package tailscale
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"time"
+)
+
+// EnsureReady 启动 tailscaled 并完成 up，确保 Tailscale 网络就绪
+func EnsureReady(authKey string) error {
+	if err := startTailscaled(); err != nil {
+		return fmt.Errorf("启动 tailscaled 失败: %w", err)
+	}
+	if err := waitTailscaledReady(); err != nil {
+		return fmt.Errorf("tailscaled sock 未就绪: %w", err)
+	}
+	if authKey == "" {
+		return fmt.Errorf("TS_AUTHKEY 环境变量未设置")
+	}
+	if err := tailscaleUp(authKey); err != nil {
+		return fmt.Errorf("tailscale up 失败: %w", err)
+	}
+	if err := waitTailscaleIP(); err != nil {
+		return fmt.Errorf("tailscale IP 未就绪: %w", err)
+	}
+	return nil
+}
+
+func startTailscaled() error {
+	cmd := exec.Command("tailscaled", "--state=/var/lib/tailscale/tailscaled.state", "--socket=/var/run/tailscale/tailscaled.sock")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Start()
+}
+
+func waitTailscaledReady() error {
+	for i := 0; i < 30; i++ {
+		if _, err := os.Stat("/var/run/tailscale/tailscaled.sock"); err == nil {
+			return nil
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return fmt.Errorf("tailscaled sock not ready")
+}
+
+func tailscaleUp(authKey string) error {
+	cmd := exec.Command("tailscale", "up", "--authkey="+authKey, "--hostname=go-proxy", "--accept-dns=true", "--socket=/var/run/tailscale/tailscaled.sock")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func waitTailscaleIP() error {
+	for i := 0; i < 30; i++ {
+		out, err := exec.Command("tailscale", "ip", "--socket=/var/run/tailscale/tailscaled.sock").Output()
+		if err == nil && len(out) > 0 {
+			return nil
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return fmt.Errorf("tailscale ip not ready")
+} 
