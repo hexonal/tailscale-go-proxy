@@ -127,7 +127,7 @@ func TestProxyChain_SOCKS5_HTTP(t *testing.T) {
 }
 
 func TestProxyChain_HTTP_HTTP(t *testing.T) {
-	t.Skip("集成测试，需本地 1080 端口可用，且能访问外网 baidu.com")
+	// t.Skip("集成测试，需本地 1080 端口可用，且能访问外网 baidu.com")
 	// 只启动上游 HTTP 代理（1112），下游 1080 由用户手动启动
 
 	// 配置 UserProxyMap，HTTP 用户指向 http://127.0.0.1:1080
@@ -194,7 +194,7 @@ func TestCurlSOCKS5Proxy(t *testing.T) {
 }
 
 func TestCurlHTTPProxy(t *testing.T) {
-	// t.Skip("需要本地环境支持 curl，且端口可用")
+	t.Skip("需要本地环境支持 curl，且端口可用")
 	// 只启动上游 HTTP 代理（1112），下游 1080 由用户手动启动
 
 	// 配置 UserProxyMap，HTTP 用户指向 http://127.0.0.1:1080
