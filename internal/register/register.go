@@ -2,8 +2,8 @@ package register
 
 import (
 	"database/sql"
-	"tailscale-go-proxy/internal/headscale"
 	"tailscale-go-proxy/internal/gost"
+	"tailscale-go-proxy/internal/headscale"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,8 +39,8 @@ func HandleRegister(c *gin.Context, db *sql.DB) {
 		return
 	}
 
-	// 4. 注册和数据库都成功后，热加载 gost 配置到内存，保证新注册用户立即生效
-	if err := gost.ReloadUserProxyMap("gost-config.yaml"); err != nil {
+	// 4. 注册和数据库都成功后，增量写入 gost 配置并热加载，保证新注册用户立即生效
+	if err := gost.AddUserToProxyMap(req.Key, ip); err != nil {
 		c.JSON(500, RegisterResponse{Success: false, Message: "gost 配置更新失败: " + err.Error()})
 		return
 	}

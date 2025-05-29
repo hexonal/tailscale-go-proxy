@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -67,25 +68,21 @@ services:
 }
 
 func TestProxyChain_SOCKS5_HTTP(t *testing.T) {
-	// t.Skip("集成测试，需本地 1080 端口可用，且能访问外网 baidu.com")
-	// 1. 启动本地 HTTP 代理（监听 1080）
-	httpProxy := NewHTTPProxyServer(":1080")
-	go httpProxy.Start()
-	t.Cleanup(func() { /* 这里无法优雅关闭 http.Server，实际部署用 context 控制 */ })
-	time.Sleep(500 * time.Millisecond)
+	t.Skip("集成测试，需本地 1080 端口可用，且能访问外网 baidu.com")
+	// 只启动上游 SOCKS5 代理（1111），下游 1080 由用户手动启动
 
-	// 2. 配置 UserProxyMap，SOCKS5 用户指向 http://127.0.0.1:1080
+	// 配置 UserProxyMap，SOCKS5 用户指向 http://127.0.0.1:1080
 	userProxyMapLock.Lock()
 	UserProxyMap["socksuser:sockspass"] = "http://127.0.0.1:1080"
 	userProxyMapLock.Unlock()
 
-	// 3. 启动 SOCKS5 代理（监听 1111）
+	// 启动上游 SOCKS5 代理（1111）
 	socks5Proxy := NewSOCKS5Server(":1111")
 	go socks5Proxy.Start()
 	t.Cleanup(func() {})
 	time.Sleep(500 * time.Millisecond)
 
-	// 4. 用 go-socks5-client 通过 SOCKS5 代理访问 baidu.com
+	// 通过 SOCKS5 代理访问 baidu.com
 	proxyDialer, err := net.Dial("tcp", "127.0.0.1:1111")
 	if err != nil {
 		t.Fatalf("无法连接本地SOCKS5代理: %v", err)
@@ -122,33 +119,29 @@ func TestProxyChain_SOCKS5_HTTP(t *testing.T) {
 	fmt.Fprintf(proxyDialer, "GET / HTTP/1.1\r\nHost: baidu.com\r\nConnection: close\r\n\r\n")
 	buf := make([]byte, 4096)
 	n, _ := proxyDialer.Read(buf)
-	if !strings.Contains(string(buf[:n]), "baidu") {
-		t.Errorf("SOCKS5->HTTP链路未获取到百度首页")
+	if !strings.Contains(string(buf[:n]), "<html") {
+		t.Errorf("SOCKS5->HTTP链路未获取到HTML内容, output=%s", string(buf[:n]))
 	} else {
 		fmt.Println("SOCKS5->HTTP链路返回内容前512字：\n" + string(buf[:min(n, 512)]))
 	}
 }
 
 func TestProxyChain_HTTP_HTTP(t *testing.T) {
-	// t.Skip("集成测试，需本地 1080 端口可用，且能访问外网 baidu.com")
-	// 1. 启动本地 HTTP 代理（监听 1080）
-	httpProxy := NewHTTPProxyServer(":1080")
-	go httpProxy.Start()
-	t.Cleanup(func() {})
-	time.Sleep(500 * time.Millisecond)
+	t.Skip("集成测试，需本地 1080 端口可用，且能访问外网 baidu.com")
+	// 只启动上游 HTTP 代理（1112），下游 1080 由用户手动启动
 
-	// 2. 配置 UserProxyMap，HTTP 用户指向 http://127.0.0.1:1080
+	// 配置 UserProxyMap，HTTP 用户指向 http://127.0.0.1:1080
 	userProxyMapLock.Lock()
 	UserProxyMap["httpuser:httppass"] = "http://127.0.0.1:1080"
 	userProxyMapLock.Unlock()
 
-	// 3. 启动 HTTP 代理（监听 1112）
+	// 启动上游 HTTP 代理（1112）
 	httpProxy2 := NewHTTPProxyServer(":1112")
 	go httpProxy2.Start()
 	t.Cleanup(func() {})
 	time.Sleep(500 * time.Millisecond)
 
-	// 4. 用 http.Client 通过 HTTP 代理访问 baidu.com
+	// 通过 HTTP 代理访问 baidu.com
 	proxyURL, _ := url.Parse("http://httpuser:httppass@127.0.0.1:1112")
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -166,9 +159,70 @@ func TestProxyChain_HTTP_HTTP(t *testing.T) {
 	body := make([]byte, 4096)
 	n, _ := resp.Body.Read(body)
 	if !strings.Contains(string(body[:n]), "<html") {
-		t.Errorf("HTTP->HTTP链路未获取到HTML内容")
+		t.Errorf("HTTP->HTTP链路未获取到HTML内容, output=%s", string(body[:n]))
 	} else {
 		fmt.Println("HTTP->HTTP链路返回内容前512字：\n" + string(body[:min(n, 512)]))
+	}
+}
+
+func TestCurlSOCKS5Proxy(t *testing.T) {
+	t.Skip("需要本地环境支持 curl，且端口可用")
+	// 只启动上游 SOCKS5 代理（1111），下游 1080 由用户手动启动
+
+	// 配置 UserProxyMap，SOCKS5 用户指向 http://127.0.0.1:1080
+	userProxyMapLock.Lock()
+	UserProxyMap["socksuser:sockspass"] = "http://127.0.0.1:1080"
+	userProxyMapLock.Unlock()
+
+	// 启动上游 SOCKS5 代理（1111）
+	socks5Proxy := NewSOCKS5Server(":1111")
+	go socks5Proxy.Start()
+	t.Cleanup(func() {})
+	time.Sleep(500 * time.Millisecond)
+
+	// 用 curl 通过 SOCKS5 代理访问 baidu.com
+	cmd := exec.Command("curl", "-s", "--socks5", "socksuser:sockspass@127.0.0.1:1111", "http://baidu.com/")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("curl 通过 SOCKS5 代理失败: %v, output=%s", err, string(output))
+	}
+	if !strings.Contains(string(output), "<html") {
+		t.Errorf("curl SOCKS5 代理未获取到 HTML 内容, output=%s", string(output))
+	} else {
+		fmt.Println("curl SOCKS5 代理返回内容前512字：\n" + string(output[:min(len(output), 512)]))
+	}
+}
+
+func TestCurlHTTPProxy(t *testing.T) {
+	// t.Skip("需要本地环境支持 curl，且端口可用")
+	// 只启动上游 HTTP 代理（1112），下游 1080 由用户手动启动
+
+	// 配置 UserProxyMap，HTTP 用户指向 http://127.0.0.1:1080
+	userProxyMapLock.Lock()
+	UserProxyMap["httpuser:httppass"] = "http://127.0.0.1:1080"
+	fmt.Printf("[DEBUG] UserProxyMap 配置: httpuser:httppass -> %s\n", UserProxyMap["httpuser:httppass"])
+	userProxyMapLock.Unlock()
+
+	// 启动上游 HTTP 代理（1112）
+	httpProxy2 := NewHTTPProxyServer(":1112")
+	fmt.Println("[DEBUG] 启动 HTTP 代理，监听 :1112")
+	go httpProxy2.Start()
+	t.Cleanup(func() {})
+	time.Sleep(500 * time.Millisecond)
+
+	// 用 curl 通过 HTTP 代理访问 baidu.com
+	curlCmd := []string{"curl", "-v", "-s", "-x", "http://httpuser:httppass@127.0.0.1:1112", "http://baidu.com/"}
+	fmt.Printf("[DEBUG] 执行 curl 命令: %s\n", strings.Join(curlCmd, " "))
+	cmd := exec.Command(curlCmd[0], curlCmd[1:]...)
+	output, err := cmd.CombinedOutput()
+	fmt.Printf("[DEBUG] curl 返回内容前512字：\n%s\n", string(output[:min(len(output), 512)]))
+	if err != nil {
+		t.Fatalf("curl 通过 HTTP 代理失败: %v, output=%s", err, string(output))
+	}
+	if !strings.Contains(string(output), "<html") {
+		t.Errorf("curl HTTP 代理未获取到 HTML 内容, output=%s", string(output))
+	} else {
+		fmt.Println("curl HTTP 代理返回内容前512字：\n" + string(output[:min(len(output), 512)]))
 	}
 }
 
