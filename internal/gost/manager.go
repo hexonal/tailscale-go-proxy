@@ -3,6 +3,7 @@ package gost
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -12,13 +13,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
 	"gopkg.in/yaml.v3"
-	"fmt"
 )
 
 // ========== 配置加载 ===========
 // UserProxyMap 全局用户转发表，key 为 "username:password"，value 为目标转发地址
 var UserProxyMap = make(map[string]string)
+
 // userProxyMapLock 用于保护 UserProxyMap 的并发读写
 var userProxyMapLock sync.RWMutex
 
@@ -113,9 +115,13 @@ func (s *SOCKS5Server) handleConnection(conn net.Conn) {
 	// 2. 用户认证与目标查找
 	proxyAddr := s.authenticate(username, password)
 	if proxyAddr == "" {
+		// 认证失败，回复 0x01
+		conn.Write([]byte{0x01, 0x01})
 		log.Printf("Authentication failed for user: %s", username)
 		return
 	}
+	// 认证成功，回复 0x00
+	conn.Write([]byte{0x01, 0x00})
 	log.Printf("User %s authenticated, using proxy: %s", username, proxyAddr)
 	// 3. 解析客户端请求目标
 	targetAddr, err := s.handleConnect(conn)
@@ -140,6 +146,19 @@ func (s *SOCKS5Server) handleHandshake(conn net.Conn) (string, string, error) {
 	methods := make([]byte, nMethods)
 	if _, err := io.ReadFull(conn, methods); err != nil {
 		return "", "", err
+	}
+	// 检查客户端是否支持用户名密码认证
+	supportUserPass := false
+	for _, m := range methods {
+		if m == UserPassAuth {
+			supportUserPass = true
+			break
+		}
+	}
+	if !supportUserPass {
+		// 不支持则回复 0xFF，断开
+		conn.Write([]byte{SOCKS5Version, 0xFF})
+		return "", "", fmt.Errorf("client does not support username/password auth")
 	}
 	// 回复客户端：需要用户名密码认证
 	if _, err := conn.Write([]byte{SOCKS5Version, UserPassAuth}); err != nil {
@@ -180,10 +199,6 @@ func (s *SOCKS5Server) authenticate(username, password string) string {
 
 // handleConnect 解析 SOCKS5 CONNECT 请求，返回目标地址
 func (s *SOCKS5Server) handleConnect(conn net.Conn) (string, error) {
-	// 发送认证成功响应
-	if _, err := conn.Write([]byte{0x01, 0x00}); err != nil {
-		return "", err
-	}
 	buf := make([]byte, 4)
 	if _, err := io.ReadFull(conn, buf); err != nil {
 		return "", err
@@ -225,7 +240,7 @@ func (s *SOCKS5Server) handleConnect(conn net.Conn) (string, error) {
 		return "", err
 	}
 	port := int(buf[0])<<8 + int(buf[1])
-	return addr + ":" +  fmt.Sprintf("%d", port), nil
+	return addr + ":" + fmt.Sprintf("%d", port), nil
 }
 
 // proxyConnection 通过 HTTP CONNECT 方式将客户端流量转发到目标代理
@@ -428,4 +443,4 @@ func (h *HTTPProxyServer) relay(conn1, conn2 net.Conn) {
 		conn2.Close()
 	}()
 	wg.Wait()
-} 
+}
