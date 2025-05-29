@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 	"strconv"
 	"tailscale-go-proxy/internal/api"
 	"tailscale-go-proxy/internal/config"
@@ -19,15 +18,13 @@ func main() {
 	}
 
 	// 打印 TS_AUTHKEY 前后几位，便于排查
-	tsAuthKey := os.Getenv("TS_AUTHKEY")
-	if len(tsAuthKey) > 10 {
-		log.Printf("[DEBUG] TS_AUTHKEY: %s...%s (共%d位)", tsAuthKey[:5], tsAuthKey[len(tsAuthKey)-5:], len(tsAuthKey))
-	} else {
-		log.Printf("[DEBUG] TS_AUTHKEY: %s (共%d位)", tsAuthKey, len(tsAuthKey))
-	}
+	tsAuthKey := cfg.TSAuthKey
+	log.Printf("[DEBUG] TS_AUTHKEY: %s (共%d位)", tsAuthKey, len(tsAuthKey))
+
+	log.Printf("[DEBUG] 配置内容: %+v", cfg)
 
 	// 2. 启动 tailscaled 并 up
-	if err := tailscale.EnsureReady(os.Getenv("TS_AUTHKEY"), cfg.LoginServer); err != nil {
+	if err := tailscale.EnsureReady(tsAuthKey, cfg.LoginServer); err != nil {
 		log.Fatalf("Tailscale 启动失败: %v", err)
 	}
 

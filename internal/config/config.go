@@ -9,6 +9,7 @@ import (
 )
 
 type Config struct {
+	TSAuthKey     string `yaml:"ts_authkey"`
 	ManageAPIPort int    `yaml:"manage_api_port"`
 	DBHost        string `yaml:"db_host"`
 	DBPort        int    `yaml:"db_port"`
