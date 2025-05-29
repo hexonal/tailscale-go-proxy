@@ -2,7 +2,6 @@ package gost
 
 import (
 	"bufio"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net"
@@ -51,14 +50,6 @@ func getProxyConnector(proxyAddr string) (func(targetAddr string) (net.Conn, err
 				ProtoMajor: 1,
 				ProtoMinor: 1,
 				Header:     make(http.Header),
-			}
-			req.Header.Set("User-Agent", "gost-proxy")
-			req.Header.Set("Proxy-Connection", "keep-alive")
-			// 3. 如有认证信息，设置 Proxy-Authorization
-			if u.User != nil {
-				user := u.User.Username()
-				pass, _ := u.User.Password()
-				req.Header.Set("Proxy-Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(user+":"+pass)))
 			}
 			// 4. 发送 CONNECT 请求
 			if err := req.Write(conn); err != nil {

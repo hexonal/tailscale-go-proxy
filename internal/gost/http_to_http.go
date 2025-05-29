@@ -2,7 +2,6 @@ package gost
 
 import (
 	"bufio"
-	"encoding/base64"
 	"io"
 	"log"
 	"net"
@@ -119,27 +118,19 @@ func (h *HTTPProxyServer) handleConnect(w http.ResponseWriter, r *http.Request, 
 // 通过下游代理转发 HTTP 请求并将响应返回给客户端。
 // 参数 w 为响应写入器，r 为客户端请求，proxyAddr 为下游代理地址。
 func (h *HTTPProxyServer) handleHTTP(w http.ResponseWriter, r *http.Request, proxyAddr string) {
-	// 1. 解析下游代理认证信息
-	u, _ := url.Parse(proxyAddr)
-	var auth string
-	if u != nil && u.User != nil && u.User.Username() != "" {
-		user := u.User.Username()
-		pass, _ := u.User.Password()
-		auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+pass))
-	}
-	// 2. 获取下游代理连接器
+	// 1. 获取下游代理连接器
 	connector, err := getProxyConnector(proxyAddr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// 3. 通过下游代理建立到目标主机的连接
+	// 2. 通过下游代理建立到目标主机的连接
 	proxyConn, err := connector(r.URL.Host)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// 4. 劫持客户端连接，转为原始 TCP
+	// 3. 劫持客户端连接，转为原始 TCP
 	hj, ok := w.(http.Hijacker)
 	if !ok {
 		http.Error(w, "Hijacking not supported", http.StatusInternalServerError)
@@ -150,7 +141,7 @@ func (h *HTTPProxyServer) handleHTTP(w http.ResponseWriter, r *http.Request, pro
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// 5. 循环转发 HTTP 请求与响应
+	// 4. 循环转发 HTTP 请求与响应
 	req := r
 	for {
 		// 构造新的 HTTP 请求，复制原始请求头
@@ -163,12 +154,7 @@ func (h *HTTPProxyServer) handleHTTP(w http.ResponseWriter, r *http.Request, pro
 				newReq.Header.Add(key, value)
 			}
 		}
-		// 设置下游代理认证头
-		if auth != "" {
-			// newReq.Header.Set("Proxy-Authorization", auth)
-		} else {
-			newReq.Header.Del("Proxy-Authorization")
-		}
+		// 确保不设置 Proxy-Authorization 头
 		newReq.Header.Del("Proxy-Authorization")
 		// 发送请求到下游代理
 		err = newReq.WriteProxy(proxyConn)
