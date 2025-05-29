@@ -60,7 +60,12 @@ func tailscaleUp(authKey, loginServer string) error {
 	cmd := exec.Command("tailscale", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		// 打印出具体命令和参数，方便排查
+		fmt.Printf("tailscale up 执行失败，命令: tailscale %v，错误: %v\n", args, err)
+	}
+	return err
 }
 
 func waitTailscaleIP() error {
