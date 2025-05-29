@@ -24,4 +24,4 @@ COPY --from=builder /go/bin/tailscale /usr/local/bin/tailscale
 COPY --from=builder /go/bin/tailscaled /usr/local/bin/tailscaled
 COPY --from=gostdl /tmp/gost /usr/local/bin/gost
 EXPOSE 1080 1089 8081
-CMD ["sh"] 
+CMD ["tail", "-f", "/dev/null"] 
