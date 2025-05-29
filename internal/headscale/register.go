@@ -15,11 +15,11 @@ type RegisterResult struct {
 }
 
 // RegisterNodeByDockerExec 通过 docker exec 调用 headscale 注册节点，返回第一个 IPv4 地址
-func RegisterNodeByDockerExec(user, key string) (string, error) {
+func RegisterNodeByDockerExec(key string) (string, error) {
 	cmd := exec.Command(
 		"docker", "exec", "-i", "headscale",
 		"headscale", "nodes", "register",
-		"--user", user, "--key", key, "--output", "json",
+		"--key", key, "--output", "json",
 	)
 	var out bytes.Buffer
 	cmd.Stdout = &out

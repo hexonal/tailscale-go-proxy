@@ -23,7 +23,7 @@ func HandleRegister(c *gin.Context, db *sql.DB) {
 		return
 	}
 
-	ip, err := headscale.RegisterNodeByDockerExec("flink", req.Key)
+	ip, err := headscale.RegisterNodeByDockerExec(req.Key)
 	if err != nil {
 		c.JSON(500, RegisterResponse{Success: false, Message: "注册失败: " + err.Error()})
 		return
