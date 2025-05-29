@@ -18,10 +18,11 @@ RUN wget -O gost.tar.gz https://github.com/go-gost/gost/releases/download/v3.0.0
 # 最终运行镜像
 FROM alpine:latest
 WORKDIR /app
-RUN apk add --no-cache iptables ip6tables
+# 只安装运行所需的最小依赖
+RUN apk add --no-cache iptables ip6tables docker-cli ca-certificates
 COPY --from=builder /app/tailscale-go-proxy .
 COPY --from=builder /go/bin/tailscale /usr/local/bin/tailscale
 COPY --from=builder /go/bin/tailscaled /usr/local/bin/tailscaled
 COPY --from=gostdl /tmp/gost /usr/local/bin/gost
 EXPOSE 1080 1089 8081
-CMD ["./tailscale-go-proxy"] 
+CMD ["./tailscale-go-proxy"]
