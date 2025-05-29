@@ -11,7 +11,7 @@ RUN go install tailscale.com/cmd/tailscaled@latest
 # 下载 gost 官方 release
 FROM alpine:latest as gostdl
 WORKDIR /tmp
-RUN wget -O gost.tar.gz https://github.com/go-gost/gost/releases/download/v3.0.0/gost-linux-amd64-3.0.0.tar.gz \
+RUN wget -O gost.tar.gz https://github.com/go-gost/gost/releases/download/v3.0.0/gost_3.0.0_linux_amd64.tar.gz \
     && tar -xzf gost.tar.gz
 
 # 最终运行镜像

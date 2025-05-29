@@ -27,10 +27,55 @@ go build -o tailscale-go-proxy main.go
 ```
 
 ### 3. Docker 部署
-推荐使用 docker-compose，已集成 tailscaled、gost、gin、数据库连接。
+推荐使用 docker-compose，已集成 tailscaled、gost（v3.0.0 最新稳定版）、gin、数据库连接。
+镜像已自动集成 gost，无需手动下载。
 ```bash
 docker-compose up --build
 ```
+
+### 环境变量配置
+
+Docker 部署时，TS_AUTHKEY 通过环境变量传递。请在 docker 目录下创建 .env 文件，内容如下（可参考 .env.example）：
+
+```env
+TS_AUTHKEY=your-ts-authkey
+```
+
+- .env.example 已提供模板，实际部署时请复制为 .env 并填写真实的 Tailscale AuthKey。
+- docker-compose.yml 会自动读取该变量用于 tailscale-go-proxy 服务。
+
+### 如何获取 Tailscale AuthKey
+
+- 如使用官方 Tailscale：
+  1. 登录 https://login.tailscale.com/admin/settings/keys
+  2. 点击"Generate auth key"生成新的 AuthKey。
+  3. 复制该密钥，填入 .env 文件 TS_AUTHKEY 字段。
+
+- 如使用自建 Headscale：
+  1. 进入 headscale 容器：
+     ```bash
+     docker exec -it headscale headscale preauthkeys create --reusable --ephemeral --user <用户名>
+     ```
+  2. 复制输出的 key，填入 .env 文件 TS_AUTHKEY 字段。
+  3. 该 key 为永久有效（不会过期），可多次复用。
+
+- 详细说明可参考：
+  - [Tailscale 官方文档](https://tailscale.com/kb/1085/auth-keys)
+  - [Headscale 官方文档](https://headscale.net/docs/)
+
+### Headscale 创建用户
+
+headscale 服务启动后，可通过以下命令在容器内创建用户（如 flink）：
+
+```bash
+docker exec -it headscale headscale users create flink
+```
+
+- 该命令会在 headscale 控制面创建名为 flink 的用户。
+- 如需查看所有用户，可执行：
+  ```bash
+  docker exec -it headscale headscale users list
+  ```
 
 ---
 
