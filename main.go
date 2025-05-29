@@ -46,6 +46,12 @@ func main() {
 		}
 	}()
 
+	// 主动加载 gost 用户转发表
+	if err := gost.ReloadUserProxyMap("gost-config.yaml"); err != nil {
+		log.Fatalf("gost 配置加载失败: %v", err)
+	}
+	log.Printf("[INFO] gost 用户转发表已加载，用户数: %d", len(gost.UserProxyMap))
+
 	// 6. 启动 gin 路由
 	r := api.NewRouter(db)
 	log.Printf("管理 API 启动于 :%d", cfg.ManageAPIPort)
