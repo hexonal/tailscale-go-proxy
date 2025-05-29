@@ -21,6 +21,7 @@ FROM alpine:latest
 WORKDIR /app
 # 只安装运行所需的最小依赖
 RUN apk add --no-cache iptables ip6tables docker-cli ca-certificates \
+    && apk add --no-cache curl wget netcat-openbsd \
     && echo "hosts: files dns" > /etc/nsswitch.conf
 COPY --from=builder /app/tailscale-go-proxy .
 COPY --from=builder /go/bin/tailscale /usr/local/bin/tailscale
