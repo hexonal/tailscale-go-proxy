@@ -8,7 +8,7 @@ import (
 )
 
 // EnsureReady 启动 tailscaled 并完成 up，确保 Tailscale 网络就绪
-func EnsureReady(authKey string) error {
+func EnsureReady(authKey, loginServer string) error {
 	if err := startTailscaled(); err != nil {
 		return fmt.Errorf("启动 tailscaled 失败: %w", err)
 	}
@@ -18,7 +18,7 @@ func EnsureReady(authKey string) error {
 	if authKey == "" {
 		return fmt.Errorf("TS_AUTHKEY 环境变量未设置")
 	}
-	if err := tailscaleUp(authKey); err != nil {
+	if err := tailscaleUp(authKey, loginServer); err != nil {
 		return fmt.Errorf("tailscale up 失败: %w", err)
 	}
 	if err := waitTailscaleIP(); err != nil {
@@ -52,8 +52,12 @@ func waitTailscaledReady() error {
 	return fmt.Errorf("tailscaled sock not ready")
 }
 
-func tailscaleUp(authKey string) error {
-	cmd := exec.Command("tailscale", "up", "--authkey="+authKey, "--hostname=go-proxy", "--accept-dns=true")
+func tailscaleUp(authKey, loginServer string) error {
+	args := []string{"up", "--authkey=" + authKey, "--hostname=go-proxy", "--accept-dns=true"}
+	if loginServer != "" {
+		args = append(args, "--login-server="+loginServer)
+	}
+	cmd := exec.Command("tailscale", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()

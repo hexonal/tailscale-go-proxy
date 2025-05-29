@@ -12,15 +12,15 @@ import (
 )
 
 func main() {
-	// 1. 启动 tailscaled 并 up
-	if err := tailscale.EnsureReady(os.Getenv("TS_AUTHKEY")); err != nil {
-		log.Fatalf("Tailscale 启动失败: %v", err)
-	}
-
-	// 2. 加载配置
+	// 1. 加载配置
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		log.Fatalf("加载配置失败: %v", err)
+	}
+
+	// 2. 启动 tailscaled 并 up
+	if err := tailscale.EnsureReady(os.Getenv("TS_AUTHKEY"), cfg.LoginServer); err != nil {
+		log.Fatalf("Tailscale 启动失败: %v", err)
 	}
 
 	// 3. 初始化数据库

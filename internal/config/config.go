@@ -15,6 +15,7 @@ type Config struct {
 	DBUser        string `yaml:"db_user"`
 	DBPassword    string `yaml:"db_password"`
 	DBName        string `yaml:"db_name"`
+	LoginServer   string `yaml:"login_server"`
 }
 
 func LoadConfig(path string) (*Config, error) {

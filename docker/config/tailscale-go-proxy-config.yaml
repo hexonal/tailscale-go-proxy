@@ -6,3 +6,5 @@ db_port: 5432
 db_user: tailscale
 db_password: tailscale
 db_name: tailscale
+
+login_server: https://headscale.ipv4.name
