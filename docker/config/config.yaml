@@ -45,12 +45,23 @@ ephemeral_node_inactivity_timeout: 30m
 # Database configuration
 database:
   type: postgres
+  # # Postgres config
+  # Please note that using Postgres is highly discouraged as it is only supported for legacy reasons.
+  # See database.type for more information.
   postgres:
+    # If using a Unix socket to connect to Postgres, set the socket path in the 'host' field and leave 'port' blank.
     host: pg
     port: 5432
+    name: tailscale
     user: tailscale
     pass: tailscale
-    name: tailscale
+    max_open_conns: 10
+    max_idle_conns: 10
+    conn_max_idle_time_secs: 3600
+
+    # If other 'sslmode' is required instead of 'require(true)' and 'disabled(false)', set the 'sslmode' you need
+    # in the 'ssl' field. Refers to https://www.postgresql.org/docs/current/libpq-ssl.html Table 34.1.
+    ssl: false
 
 ### TLS configuration
 # Let's encrypt / ACME
