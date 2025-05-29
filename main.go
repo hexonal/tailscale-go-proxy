@@ -4,11 +4,11 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"tailscale-go-proxy/internal/config"
-	"tailscale-go-proxy/internal/tailscale"
-	"tailscale-go-proxy/internal/gost"
 	"tailscale-go-proxy/internal/api"
+	"tailscale-go-proxy/internal/config"
+	"tailscale-go-proxy/internal/gost"
 	"tailscale-go-proxy/internal/service"
+	"tailscale-go-proxy/internal/tailscale"
 )
 
 func main() {
@@ -16,6 +16,14 @@ func main() {
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		log.Fatalf("加载配置失败: %v", err)
+	}
+
+	// 打印 TS_AUTHKEY 前后几位，便于排查
+	tsAuthKey := os.Getenv("TS_AUTHKEY")
+	if len(tsAuthKey) > 10 {
+		log.Printf("[DEBUG] TS_AUTHKEY: %s...%s (共%d位)", tsAuthKey[:5], tsAuthKey[len(tsAuthKey)-5:], len(tsAuthKey))
+	} else {
+		log.Printf("[DEBUG] TS_AUTHKEY: %s (共%d位)", tsAuthKey, len(tsAuthKey))
 	}
 
 	// 2. 启动 tailscaled 并 up
