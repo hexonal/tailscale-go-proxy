@@ -113,7 +113,9 @@ curl --socks5 yourkey:yourkey@localhost:1080 https://example.com
 - 接口：`POST /register`
 - 示例：
 ```bash
- 
+curl -X POST http://localhost:8081/register \
+  -H 'Content-Type: application/json' \
+  -d '{"key": "yourkey"}'
 ```
 - 注册后即可用 yourkey 作为代理认证信息进行流量转发
 
