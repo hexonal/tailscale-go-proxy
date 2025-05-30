@@ -99,10 +99,10 @@ docker exec -it headscale headscale users create flink
 #### 示例
 ```bash
 # HTTP 代理带认证
-curl -x http://yourkey:yourkey@localhost:8081 https://example.com
+curl -x http://yourkey:yourkey@localhost:8081 https://ipinfo.io
 
 # SOCKS5 代理带认证
-curl --socks5 yourkey:yourkey@localhost:1080 https://example.com
+curl --socks5 yourkey:yourkey@localhost:1080 https://ipinfo.io
 ```
 
 ---
