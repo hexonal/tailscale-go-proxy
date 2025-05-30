@@ -14,6 +14,8 @@ services:
       - "50443:50443" # gRPC
       - "9090:9090"   # Metrics
     volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - ./headscale-data:/var/lib/headscale
       - ./config/config.yaml:/etc/headscale/config.yaml:ro
       - ./config/derp.yaml:/etc/headscale/derp.yaml:ro
@@ -41,13 +43,16 @@ services:
       #- "127.0.0.1:8080:8080"  # 修复：添加端口映射给 Nginx 代理
       - "3478:3478/udp"        # STUN 端口
     environment:
-      - DERP_DOMAIN=derp.ipv4.name
+      - DERP_DOMAIN=derp.domain.name
       - DERP_CERTMODE=manual
       - DERP_ADDR=:8080
       - DERP_HTTP_PORT=8080
       - DERP_STUN_PORT=3478
       - DERP_VERIFY_CLIENTS=false
-      - DERP_HOSTNAME=derp.ipv4.name
+      - DERP_HOSTNAME=derp.domain.name
+      volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     networks:
       - frontend
 
@@ -61,6 +66,8 @@ services:
       - HEADSCALE_URL=http://headscale:8080
       - COOKIE_SECRET=
     volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - ./headscale-data:/var/lib/headscale:ro
       # 修复：移除重复的挂载
       - ./config/headplane.yaml:/etc/headplane/config.yaml:ro
@@ -85,6 +92,8 @@ services:
       - "127.0.0.1:1080:1080"
       - "127.0.0.1:1089:1089"
     volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - ./config/tailscale-go-proxy-config.yaml:/app/config.yaml
       # 修复：移除重复的挂载
       - ./tailscale-data:/var/lib/tailscale
@@ -115,6 +124,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - ./pg-data:/var/lib/postgresql/data
     networks:
       - frontend
