@@ -56,3 +56,10 @@ func LoadUserProxyMap(db *sql.DB) error {
 func RefreshUserProxyMapFromDB(db *sql.DB) error {
 	return LoadUserProxyMap(db)
 }
+
+// 增量添加新用户到内存缓存
+func AddUserToProxyMap(key, ip string) {
+	userProxyMapLock.Lock()
+	defer userProxyMapLock.Unlock()
+	UserProxyMap[key+":"+key] = ip + ":" + strconv.Itoa(SourcePort)
+}

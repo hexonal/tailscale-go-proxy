@@ -40,10 +40,7 @@ func HandleRegister(c *gin.Context, db *sql.DB) {
 	}
 
 	// 4. 注册和数据库都成功后，增量写入 gost 配置并热加载，保证新注册用户立即生效
-	if err := gost.RefreshUserProxyMapFromDB(db); err != nil {
-		c.JSON(500, RegisterResponse{Success: false, Message: "gost 缓存热加载失败: " + err.Error()})
-		return
-	}
+	gost.AddUserToProxyMap(req.Key, ip)
 
 	// 5. 返回注册成功和分配的 IP
 	c.JSON(200, RegisterResponse{Success: true, Message: "注册成功，IP: " + ip})

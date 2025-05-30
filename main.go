@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"strconv"
 	"tailscale-go-proxy/internal/api"
@@ -8,6 +9,12 @@ import (
 	"tailscale-go-proxy/internal/gost"
 	"tailscale-go-proxy/internal/service"
 	"tailscale-go-proxy/internal/tailscale"
+)
+
+// 代理端口常量，需与 main.go 启动端口保持一致
+const (
+	SOCKS5ProxyPort = 1080 // SOCKS5 代理端口
+	HTTPProxyPort   = 1089 // HTTP 代理端口
 )
 
 func main() {
@@ -38,16 +45,21 @@ func main() {
 	}
 	log.Printf("[INFO] gost 用户转发表已加载，用户数: %d", len(gost.UserProxyMap))
 
+	if len(gost.UserProxyMap) < 1000 {
+		imported, _ := json.MarshalIndent(gost.UserProxyMap, "", "  ")
+		log.Printf("[DEBUG] UserProxyMap: %s", string(imported))
+	}
+
 	// 5. 启动 SOCKS5 代理
 	go func() {
-		if err := gost.NewSOCKS5Server(":1080").Start(); err != nil {
+		if err := gost.NewSOCKS5Server(":" + strconv.Itoa(SOCKS5ProxyPort)).Start(); err != nil {
 			log.Fatalf("SOCKS5 代理启动失败: %v", err)
 		}
 	}()
 
 	// 6. 启动 HTTP 代理
 	go func() {
-		if err := gost.NewHTTPProxyServer(":1089").Start(); err != nil {
+		if err := gost.NewHTTPProxyServer(":" + strconv.Itoa(HTTPProxyPort)).Start(); err != nil {
 			log.Fatalf("HTTP 代理启动失败: %v", err)
 		}
 	}()
