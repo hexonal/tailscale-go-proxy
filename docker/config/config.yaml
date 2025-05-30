@@ -1,6 +1,6 @@
 # headscale configuration file
 # The url clients will connect to.
-server_url: https://headscale.ipv4.name
+server_url: https://headscale.domain.com
 
 # Address to listen to / bind to on the server
 listen_addr: 0.0.0.0:8080

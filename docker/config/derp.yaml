@@ -7,9 +7,8 @@ regions:
     nodes:
       - name: "derp-ipv4"
         regionid: 900
-        hostname: "derp.ipv4.name"        # 替换为您的实际域名
-        ipv4: "154.89.148.31"     # 替换为您服务器的公网 IP
-        # ipv6: "YOUR_IPV6_ADDRESS"       # 如果有 IPv6 可以添加
+        hostname: "derp.domain.com"        # 替换为您的实际域名
+        ipv4: "154.89.xxx.31"     # 替换为您服务器的公网 IP
         stunport: 3478
         stunonly: false
         derpport: 443                     # HTTPS 端口

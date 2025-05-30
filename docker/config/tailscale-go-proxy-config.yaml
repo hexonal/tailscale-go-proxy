@@ -1,11 +1,11 @@
 # tailscale-go-proxy 配置
 manage_api_port: 8081
 
-db_host: 154.89.148.31
+db_host: xxxx
 db_port: 5432
 db_user: tailscale
 db_password: tailscale
 db_name: tailscale
 ts_authkey: da8ed89eaa05dea339419242ffa7149c19d994492e2a3639
 
-login_server: https://headscale.ipv4.name
+login_server: http://headscale:8080
