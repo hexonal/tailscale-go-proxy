@@ -73,15 +73,19 @@ func (s *SOCKS5Server) handleConnection(conn net.Conn) {
 		log.Printf("Authentication failed for user: %s", username)
 		return
 	}
-	// 认证成功，返回认证成功响应（已在 handleHandshake 内部完成，不需要再次发送）
+	// 3. 认证成功，发送认证成功响应
+	if _, err := conn.Write([]byte{0x01, 0x00}); err != nil {
+		log.Printf("Failed to send auth success response: %v", err)
+		return
+	}
 	log.Printf("User %s authenticated, using proxy: %s", username, proxyAddr)
-	// 3. 解析客户端请求的目标地址
+	// 4. 解析客户端请求的目标地址
 	targetAddr, err := s.handleConnect(conn)
 	if err != nil {
 		log.Printf("Connect handling error: %v", err)
 		return
 	}
-	// 4. 通过下游代理建立到目标地址的连接
+	// 5. 通过下游代理建立到目标地址的连接
 	connector, err := getProxyConnector(proxyAddr)
 	if err != nil {
 		log.Printf("getProxyConnector error: %v", err)
@@ -97,9 +101,9 @@ func (s *SOCKS5Server) handleConnection(conn net.Conn) {
 		return
 	}
 	defer proxyConn.Close()
-	// 5. 通知客户端连接建立成功
+	// 6. 通知客户端连接建立成功
 	conn.Write([]byte{0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
-	// 6. 开始双向转发数据
+	// 7. 开始双向转发数据
 	s.relay(conn, proxyConn)
 }
 
