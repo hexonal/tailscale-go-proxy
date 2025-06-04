@@ -5,10 +5,7 @@ import (
 	"io"
 	"log"
 	"net"
-	"net/url"
-	"strconv"
 	"sync"
-	"time"
 )
 
 // SOCKS5 协议常量
@@ -248,82 +245,4 @@ func (s *SOCKS5Server) relay(conn1, conn2 net.Conn) {
 		conn2.Close()
 	}()
 	wg.Wait()
-}
-
-// getProxyConnector 返回一个 SOCKS5 下游代理的连接器函数。
-// 仅支持 socks5 协议的下游代理。
-// 参数 proxyAddr 为下游代理地址。
-// 返回值：连接器函数和 error。
-func (s *SOCKS5Server) getProxyConnector(proxyAddr string) (func(targetAddr string) (net.Conn, error), error) {
-	// 只允许 socks5 协议的下游代理
-	u, err := url.Parse(proxyAddr)
-	if err != nil || u.Scheme == "" {
-		u = &url.URL{Scheme: "http", Host: proxyAddr}
-	}
-	if u.Scheme != "socks5" {
-		return nil, fmt.Errorf("SOCKS5Server 只支持 socks5 下游代理")
-	}
-	// 返回一个连接器函数，内部实现 SOCKS5 协议握手
-	return func(targetAddr string) (net.Conn, error) {
-		conn, err := net.DialTimeout("tcp", u.Host, 10*time.Second)
-		if err != nil {
-			return nil, err
-		}
-		var user, pass string
-		if u.User != nil {
-			user = u.User.Username()
-			pass, _ = u.User.Password()
-		}
-		methods := []byte{0x00}
-		if user != "" {
-			methods = []byte{0x02}
-		}
-		// 发送 VER/NMETHODS/METHODS
-		conn.Write([]byte{0x05, byte(len(methods))})
-		conn.Write(methods)
-		resp := make([]byte, 2)
-		if _, err := io.ReadFull(conn, resp); err != nil {
-			conn.Close()
-			return nil, err
-		}
-		if resp[1] == 0x02 {
-			// 需要用户名密码认证
-			conn.Write([]byte{0x01, byte(len(user))})
-			conn.Write([]byte(user))
-			conn.Write([]byte{byte(len(pass))})
-			conn.Write([]byte(pass))
-			authResp := make([]byte, 2)
-			if _, err := io.ReadFull(conn, authResp); err != nil || authResp[1] != 0x00 {
-				conn.Close()
-				return nil, fmt.Errorf("SOCKS5 auth failed")
-			}
-		}
-		// 发送 CONNECT 请求
-		host, portStr, _ := net.SplitHostPort(targetAddr)
-		port, _ := strconv.Atoi(portStr)
-		var addrType byte
-		var addrBytes []byte
-		if ip := net.ParseIP(host); ip != nil {
-			if ip.To4() != nil {
-				addrType = 0x01
-				addrBytes = ip.To4()
-			} else if ip.To16() != nil {
-				addrType = 0x04
-				addrBytes = ip.To16()
-			}
-		} else {
-			addrType = 0x03
-			addrBytes = append([]byte{byte(len(host))}, []byte(host)...)
-		}
-		req := []byte{0x05, 0x01, 0x00, addrType}
-		req = append(req, addrBytes...)
-		req = append(req, byte(port>>8), byte(port&0xff))
-		conn.Write(req)
-		reply := make([]byte, 10)
-		if _, err := io.ReadFull(conn, reply); err != nil || reply[1] != 0x00 {
-			conn.Close()
-			return nil, fmt.Errorf("SOCKS5 connect failed")
-		}
-		return conn, nil
-	}, nil
 }

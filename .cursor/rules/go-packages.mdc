@@ -1,10 +1,10 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 # Go 包设计与项目结构 (v1.1)
-(包注释规范参见 [Go 代码注释规范](./go-comments.mdc#21-包注释-package-comments))
+(包注释规范参见 [Go 代码注释规范](mdc:go-comments.mdc#21-包注释-package-comments))
 
 本规则涵盖了 Go 项目中包的设计原则、依赖管理以及推荐的项目结构，旨在实现高内聚、低耦合、清晰的模块划分，提升代码的可维护性、可测试性和可读性。
 
@@ -45,14 +45,14 @@ alwaysApply: false
     *   包名应清晰地反映其内容和用途。例如，`http`, `json`, `user`。
     *   避免使用下划线 (`_`) 或混合大小写 (camelCase)。
     *   避免使用过于通用的名称，如 `util`, `common`, `lib`, `helper`。如果确实需要共享代码，应根据其具体功能命名，如 `strutil` (字符串工具), `httputil` (HTTP 工具)。
-    *   标准库的包名是很好的参考。(更广泛的命名规范参见 [Go 代码风格与格式化](./go-style.mdc#命名规范))
+    *   标准库的包名是很好的参考。(更广泛的命名规范参见 [Go 代码风格与格式化](mdc:go-style.mdc#命名规范))
 *   **导入路径与包名**: 通常，包的导入路径的最后一部分与其包名相同。
     *   例如，包 `github.com/example/project/internal/auth` 的包声明应为 `package auth`。
 *   **AI 指导**:
     *   检查新建或重命名的包名是否符合上述约定。
     *   对于不符合规范的包名提出修改建议。
 
-### 4. 错误处理 (Error Handling) (详细规范请参考 [Go 错误处理规范](./go-errors.mdc))
+### 4. 错误处理 (Error Handling) (详细规范请参考 [Go 错误处理规范](mdc:go-errors.mdc))
 *   **规则**:
     *   错误是值 (Errors are values)。函数或方法在可能失败时，应返回一个 `error` 类型作为其最后一个返回值。
     *   使用 `fmt.Errorf` 或 `errors.New` 创建错误。通过 `fmt.Errorf` 使用 `%w` 动词来包装错误，以保留原始错误的上下文，便于调试。
@@ -66,8 +66,8 @@ alwaysApply: false
 ### 5. 入口点 (`main` 包)
 *   **职责**: `main` 包应尽可能小而简单，其主要职责是：
     *   解析命令行参数和环境变量。
-    *   加载[配置](./go-config-logging.mdc#配置管理)。
-    *   设置[日志](./go-config-logging.mdc#日志-logging)。
+    *   加载[配置](mdc:go-config-logging.mdc#配置管理)。
+    *   设置[日志](mdc:go-config-logging.mdc#日志-logging)。
     *   初始化依赖项（如数据库连接、消息队列生产者/消费者等）。
     *   组装和启动应用程序的核心组件（例如，启动 HTTP 服务器、运行后台任务）。
     *   将实际的业务逻辑委托给 `internal` 或 `pkg` 中的其他包。
@@ -93,8 +93,8 @@ alwaysApply: false
         *   **`/internal/repository`** (或 `dao`, `store`, `dal`): 数据访问层，负责与数据存储（数据库、缓存、外部 API 等）进行交互。封装数据持久化和检索的细节，向上层（`service`）暴露接口。
         *   **`/internal/models`** (或 `domain`, `entity`): 定义核心业务对象、数据结构。这些模型被 `service` 和 `repository` 使用。
             *   **注意**: 为保持领域模型的纯净性，避免在此处直接使用 ORM 标签或特定数据库的注解。如果需要，可以在 `repository` 内部定义私有的数据传输对象 (DTO) 或数据库模型进行转换。
-        *   **`/internal/middleware`**: (可选) 存放 HTTP 中间件 (具体模式参见 [HTTP 中间件模式](./go-idioms.mdc#http-中间件模式-middleware-pattern)) (如日志、认证、CORS、限流等)。
-        *   **`/internal/config`**: (可选) 存放[配置加载和管理](./go-config-logging.mdc#配置管理)相关的代码。
+        *   **`/internal/middleware`**: (可选) 存放 HTTP 中间件 (具体模式参见 [HTTP 中间件模式](mdc:go-idioms.mdc#http-中间件模式-middleware-pattern)) (如日志、认证、CORS、限流等)。
+        *   **`/internal/config`**: (可选) 存放[配置加载和管理](mdc:go-config-logging.mdc#配置管理)相关的代码。
     *   **AI 指导**:
         *   创建业务逻辑、数据访问、模型、配置或中间件时，建议放在 `internal` 下相应的子目录中。
         *   如果发现业务逻辑散落在 `handler` 或 `main` 包中，建议将其迁移到 `service` 包。
@@ -133,7 +133,7 @@ alwaysApply: false
 
 *   **`/test`**: (可选)
     *   **用途**: 存放额外的测试文件和辅助工具，特别是集成测试、端到端测试 (E2E) 或项目范围的测试数据/工具。
-    *   **注意**: [单元测试](./go-testing.mdc#单元测试) (`_test.go` 文件) 通常与被测试的包放在同一个目录下。此 `/test` 目录用于存放那些不适合放在具体包内的测试相关内容。
+    *   **注意**: [单元测试](mdc:go-testing.mdc#单元测试) (`_test.go` 文件) 通常与被测试的包放在同一个目录下。此 `/test` 目录用于存放那些不适合放在具体包内的测试相关内容。
     *   **AI 指导**: 对于复杂的测试场景或共享的测试基础设施，建议使用此目录。
 
 *   **`/docs`**: (可选)
