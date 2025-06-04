@@ -48,9 +48,9 @@ func HandleRegister(c *gin.Context, db *sql.DB) {
 	handleRegisterCommon(req.Key, db, c)
 }
 
-// HandleRegisterV2 处理新版注册请求，支持 code 注册码（GET 方法，参数从 query 获取）
+// HandleRegisterV2 处理新版注册请求，支持 code 注册码（GET 方法，参数从 path 获取）
 func HandleRegisterV2(c *gin.Context, db *sql.DB) {
-	code := c.Query("code")
+	code := c.Param("key")
 	if code == "" {
 		c.JSON(400, RegisterResponse{Success: false, Message: "缺少 code 参数"})
 		return
