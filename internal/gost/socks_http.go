@@ -76,8 +76,7 @@ func (s *SOCKS5Server) handleConnection(conn net.Conn) {
 		log.Printf("Authentication failed for user: %s", username)
 		return
 	}
-	// 认证成功，返回认证成功响应
-	conn.Write([]byte{0x01, 0x00})
+	// 认证成功，返回认证成功响应（已在 handleHandshake 内部完成，不需要再次发送）
 	log.Printf("User %s authenticated, using proxy: %s", username, proxyAddr)
 	// 3. 解析客户端请求的目标地址
 	targetAddr, err := s.handleConnect(conn)
@@ -133,6 +132,7 @@ func (s *SOCKS5Server) handleHandshake(conn net.Conn) (string, string, error) {
 			supportUserPass = true
 			break
 		}
+
 	}
 	if !supportUserPass {
 		// 不支持则返回 0xFF，协议要求
